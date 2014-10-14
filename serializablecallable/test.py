@@ -1,15 +1,16 @@
 import tempfile
-
 from nose.tools import raises
+import pickle
 
-from h5it import SerializableCallable, dump, load
+from serializablecallable.base import extract_source
+from serializablecallable import SerializableCallable
 
 
 path = tempfile.mkstemp()[1]
 
 
 def test_serialize_callable_and_test_basic():
-    from h5it.callable import serialize_callable_and_test as sct
+    from serializablecallable.base import serialize_callable_and_test as sct
 
     def a_mock_function(x, y):
         pass
@@ -18,7 +19,6 @@ def test_serialize_callable_and_test_basic():
 
 
 def test_get_source():
-    from h5it.callable import extract_source
 
     def a_mock_function(x, y):
         pass
@@ -28,35 +28,36 @@ def test_get_source():
 
 
 def test_use_allowed_global():
-    from h5it.callable import serialize_callable_and_test
+    from serializablecallable.base import serialize_callable_and_test as sct
     from itertools import product
     import itertools
 
     def a_mock_function(*args):
         return product(args)
 
-    serialize_callable_and_test(a_mock_function, [itertools])
+    sct(a_mock_function, [itertools])
 
 
 @raises(NameError)
 def test_use_unallowed_global_raises_never_present():
-    from h5it.callable import serialize_callable_and_test
+    from serializablecallable.base import serialize_callable_and_test as sct
 
     def a_mock_function(*args):
         return product(args)
 
-    serialize_callable_and_test(a_mock_function, [])
+    sct(a_mock_function, [])
 
 
 @raises(NameError)
 def test_use_unallowed_global_raises_was_present():
-    from h5it.callable import serialize_callable_and_test
+    from serializablecallable.base import serialize_callable_and_test as sct
+
     from itertools import product
 
     def a_mock_function(*args):
         return product(args)
 
-    serialize_callable_and_test(a_mock_function, [])
+    sct(a_mock_function, [])
 
 
 def test_save_serializable_callable():
@@ -67,16 +68,16 @@ def test_save_serializable_callable():
         return product(args)
 
     sc = SerializableCallable(a_mock_function, [itertools])
-    dump(sc, path)
+    pickle.dumps(sc, protocol=2)
 
 
 def test_load_serializable_callable():
 
     def a_function(*args):
-        import numpy as np
-        return np.sum(args)
+        from itertools import product
+        return product(args)
 
     sc = SerializableCallable(a_function, [])
-    dump(sc, path)
-    f = load(path).callable
+    x = pickle.dumps(sc, protocol=2)
+    f = pickle.loads(x).callable
     assert a_function(2, 4) == f(2, 4)

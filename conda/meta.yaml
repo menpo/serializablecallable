@@ -1,0 +1,26 @@
+package:
+  name: serializablecallable
+  version: {{ environ['CONDACI_VERSION'] }}
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+    - mock  1.0.1 # [not py3k]
+
+test:
+  requires:
+  - nose
+
+  imports:
+    - serializablecallable
+
+  commands:
+    - python -c "import nose; nose.main()" -s serializablecallable
+
+about:
+  home: https://github.com/menpo/serializablecallable/
+  license: BSD License
