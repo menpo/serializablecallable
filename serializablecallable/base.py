@@ -156,5 +156,6 @@ class SerializableCallable(object):
         return dict(serialized_c._asdict())
 
     def __setstate__(self, state):
-        self.callable = deserialize_callable(**state)
+        self.callable = deserialize_callable(state['name'], state['source'],
+                                             state['modules'])
         self.modules = state['modules']
