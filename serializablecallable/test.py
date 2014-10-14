@@ -75,7 +75,7 @@ def test_load_serializable_callable():
 
     def a_function(*args):
         from itertools import product
-        return product(args)
+        return list(product(args))
 
     sc = SerializableCallable(a_function, [])
     x = pickle.dumps(sc, protocol=2)
