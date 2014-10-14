@@ -37,21 +37,38 @@ def serialize_callable_and_test(c, modules):
 def test_callable(c):
     nargs = len(getargspec(c).args)
     args = [MagicMock() for _ in range(nargs)]
-
-    # Store original __import__
-    orig_import = __import__
-
-    def import_mock(name, *args):
-        orig_import(name)
-        return MagicMock()
-
+    # first we need to get a handle on the builtin import method.
     if is_py2:
+        import __builtin__
         import_string = '__builtin__.__import__'
     elif is_py3:
+        import builtins as __builtin__
         import_string = 'builtins.__import__'
 
+    # make sure we keep this, otherwise we won't be able to fix our patching!
+    orig_import = __builtin__.__import__
+
+    def import_mock(name, *args):
+        # we are in our callable and we are attempting to import something.
+        # we want to confirm that the item exists, so we flip back to real
+        # importing and import the object. Note that it's critical that we flip
+        # this back as recusive importing would otherwise be damaged by the
+        # patch.
+        __builtin__.__import__ = orig_import
+        orig_import(name)
+        # the import was successful! Now give a mock back instead of the real
+        # thing.
+        __builtin__.__import__ = import_mock
+        # and just vend a MagicMock back..
+        return MagicMock()
+
+    # invoke our callable with import patched.
     with patch(import_string, side_effect=import_mock):
         c(*args)
+
+    # to make ourselves feel better, never leave this function without checking
+    # that we have restored order to the universe!
+    assert __builtin__.__import__ == orig_import
 
 
 def serialize_callable(c, modules):
